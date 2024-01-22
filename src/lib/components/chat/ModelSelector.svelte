@@ -33,27 +33,29 @@
 <div class="flex flex-col my-2">
 	{#each selectedModels as selectedModel, selectedModelIdx}
 		<div class="flex">
-			<select
-				id="models"
-				class="outline-none bg-transparent text-lg font-semibold rounded-lg block w-full placeholder-gray-400"
-				bind:value={selectedModel}
-				{disabled}
-			>
-				<option class=" text-gray-700" value="" selected disabled>Select a model</option>
+				{#if $user.role === 'admin'}
+					<select
+						id="models"
+						class="outline-none bg-transparent text-lg font-semibold rounded-lg block w-full placeholder-gray-400"
+						bind:value={selectedModel}
+					>
+						<option class="text-gray-700" value="" selected disabled>Select a model</option>
+						{#each $models as model}
+							{#if model.name === 'hr'}
+								<hr />
+							{:else}
+								<option value={model.name} class="text-gray-700 text-lg">{model.name}</option>
+							{/if}
+						{/each}
+					</select>
+				{:else}
+					<div class="text-lg font-semibold">
+						{selectedModels}
+					</div>
+				{/if}
 
-				{#each $models as model}
-					{#if model.name === 'hr'}
-						<hr />
-					{:else}
-						<option value={model.name} class="text-gray-700 text-lg"
-							>{model.name +
-								`${model.size ? ` (${(model.size / 1024 ** 3).toFixed(1)}GB)` : ''}`}</option
-						>
-					{/if}
-				{/each}
-			</select>
-
-			{#if selectedModelIdx === 0}
+			
+			{#if selectedModelIdx === 0 && user.role === 'admin'}
 				<button
 					class="  self-center {selectedModelIdx === 0
 						? 'mr-3'
@@ -76,7 +78,7 @@
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
 					</svg>
 				</button>
-			{:else}
+			{:else if user.role === 'admin'}
 				<button
 					class="  self-center disabled:text-gray-600 disabled:hover:text-gray-600 {selectedModelIdx ===
 					0
@@ -103,7 +105,7 @@
 
 			{#if selectedModelIdx === 0}
 				<button
-					class=" self-center dark:hover:text-gray-300"
+					class=" ml-auto dark:hover:text-gray-300"
 					id="open-settings-button"
 					on:click={async () => {
 						await showSettings.set(!$showSettings);
@@ -135,5 +137,7 @@
 </div>
 
 <div class="text-left mt-1.5 text-xs text-gray-500">
-	<button on:click={saveDefaultModel}> Set as default</button>
+	{#if $user.role == 'admin'}
+		<button on:click={saveDefaultModel}> Set as default</button>
+	{/if}
 </div>

@@ -1,8 +1,9 @@
 <script>
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
-	import { config, user } from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { setDefaultModels, getDefaultModels } from '$lib/apis/configs';
+	import { config, models, settings, user } from '$lib/stores';
 
 	import toast from 'svelte-french-toast';
 
@@ -17,6 +18,37 @@
 
 	let signUpEnabled = true;
 	let showEditUserModal = false;
+	
+	let selectedModels = [''];
+	let defaultModel = JSON.parse(localStorage.getItem('settings') ?? '{}').models;
+
+	$: if (selectedModels.length > 0 && $models.length > 0) {
+		selectedModels = selectedModels.map((model) =>
+			$models.map((m) => m.name).includes(model) ? model : ''
+		);
+	}
+	
+	const saveDefaultModel = async () => {
+		const hasEmptyModel = selectedModels.filter((it) => it === '');
+		if (hasEmptyModel.length) {
+			toast.error('Choose a model before saving...');
+			return;
+		}
+		settings.set({ ...$settings, models: selectedModels });
+		localStorage.setItem('settings', JSON.stringify($settings));
+
+		if ($user.role === 'admin') {
+			console.log('setting default models globally');
+			await setDefaultModels(localStorage.token, selectedModels.join(','));
+		}
+		toast.success('Default model updated');
+	};
+
+	const updateModelHandler = async (model) => {
+		defaultModel = model;
+		selectedModels = [model];
+		saveDefaultModel();
+	};
 
 	const updateRoleHandler = async (id, role) => {
 		const res = await updateUserRole(localStorage.token, id, role).catch((error) => {
@@ -231,6 +263,81 @@
 							</tbody>
 						</table>
 					</div>
+
+					<br/>
+					<br/>
+					
+					<div class=" text-2xl font-semibold">Models ({$models.length})</div>
+					<div class=" text-gray-500 text-xs font-medium mt-1">
+						Set default model and add display names.
+					</div>
+					<hr class=" my-3 dark:border-gray-600" />
+					<div class="scrollbar-hidden relative overflow-x-auto whitespace-nowrap">
+						<table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+							<thead
+								class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
+							>
+								<tr>
+									<th scope="col" class="px-6 py-3"> Model </th>
+									<th scope="col" class="px-6 py-3"> Size </th>
+									<th scope="col" class="px-6 py-3"> Model Family </th>
+									<th scope="col" class="px-6 py-3"> Default </th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each $models as model}
+									<tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+										<th
+											scope="row"
+											class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white w-fit"
+										>
+											{#if defaultModel == model.name}
+												<div class="flex flex-row">
+													<div class=" font-semibold self-center">{model.name}</div>
+												</div>
+											{:else}
+												<div class="flex flex-row">
+													<div class=" dark:text-gray-400 self-center">{model.name}</div>
+												</div>
+											{/if}
+										</th>
+										<td class="px-6 py-4"> {(model.size / 1024 ** 3).toFixed(2)} GB </td>
+										<td class="px-6 py-4"> {model.details.family}</td>
+										<td class="px-6 py-4 space-x-1 text-center flex justify-center">
+											<button
+												class="self-center w-fit text-sm p-1.5 border dark:border-gray-600 rounded-xl flex"
+												on:click={async () => {
+													updateModelHandler(model.name)
+												}}
+											>
+												{#if defaultModel == model.name}
+													<svg height="17px" width="17px" 
+														xmlns="http://www.w3.org/2000/svg" 
+														viewBox="0 0 17.837 17.837" 
+														xml:space="preserve"
+													>
+														<path 
+															style="fill:#7FE784;" 
+															d="M16.145,2.571c-0.272-0.273-0.718-0.273-0.99,0L6.92,10.804l-4.241-4.27c-0.272-0.274-0.715-0.274-0.989,0L0.204,8.019c-0.272,0.271-0.272,0.717,0,0.99l6.217,6.258c0.272,0.271,0.715,0.271,0.99,0L17.63,5.047c0.276-0.273,0.276-0.72,0-0.994L16.145,2.571z"/>
+												</svg>
+												{:else}
+													<svg height="17px" width="17px" 
+														xmlns="http://www.w3.org/2000/svg" 
+														viewBox="0 0 17.837 17.837" 
+														xml:space="preserve"
+													>
+														<path 
+															style="fill:#DFDFDF;" 
+															d="M16.145,2.571c-0.272-0.273-0.718-0.273-0.99,0L6.92,10.804l-4.241-4.27c-0.272-0.274-0.715-0.274-0.989,0L0.204,8.019c-0.272,0.271-0.272,0.717,0,0.99l6.217,6.258c0.272,0.271,0.715,0.271,0.99,0L17.63,5.047c0.276-0.273,0.276-0.72,0-0.994L16.145,2.571z"/>
+												</svg>
+												{/if}
+											</button>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>	
 				</div>
 			</div>
 		</div>

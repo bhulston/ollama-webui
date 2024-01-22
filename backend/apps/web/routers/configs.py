@@ -38,3 +38,16 @@ async def set_global_default_models(request: Request,
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
+    
+############################
+# GetDefaultModels
+############################
+    
+
+@router.get("/default", response_model=str)
+async def get_global_default_models(request: Request):
+    # Check if the user is authorized to access this endpoint
+    if request.app.state.DEFAULT_MODELS:
+        return request.app.state.DEFAULT_MODELS
+    else:
+        return None

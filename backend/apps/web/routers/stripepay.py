@@ -45,7 +45,17 @@ async def get_stripe_info(user=Depends(get_current_user)):
            'amount': ('$' + str(subscription['plan'].get('amount')/100) + ' ' + subscription['plan'].get('currency'))[:3]
         }
       except Exception as e:
-        print("Error in getting stripe info", e)
+        print("Error in getting live stripe info", e)
+        stripe_user =  Stripes.get_stripe_by_id(user.id)
+        if stripe_user:
+            return {
+                'subscriptionId': stripe_user.subscriptionId,
+                'currentPeriodEnd': stripe_user.currentPeriodEnd,
+                'customerId': stripe_user.customerId,
+                'active': False,
+                'email': stripe_user.email,
+                'amount': "None"
+            }
         return None
 
 ############################

@@ -575,15 +575,24 @@
 
 	const loadSubscription = async () => {
 		const response = await getSubscription(localStorage.token);
+			
+		if (response) {
+			const periodEnd = new Date(response.currentPeriodEnd * 1000); // Convert seconds to milliseconds
+			const formattedPeriodEnd = new Intl.DateTimeFormat('en-US', { 
+				year: 'numeric', 
+				month: 'short', 
+				day: 'numeric' 
+			}).format(periodEnd);
 
-		const periodEnd = new Date(response.currentPeriodEnd * 1000); // Convert seconds to milliseconds
-		const formattedPeriodEnd = new Intl.DateTimeFormat('en-US', { 
-			year: 'numeric', 
-			month: 'short', 
-			day: 'numeric' 
-		}).format(periodEnd);
-
-		SubscriptionDetails = `${response.amount}/month Next: ${formattedPeriodEnd}`;
+			if (response.amount = "None") {
+				SubscriptionDetails = `Period ends: ${formattedPeriodEnd}`;
+			} else {
+				SubscriptionDetails = `${response.amount}/month Period ends: ${formattedPeriodEnd}`;
+			}
+			
+		} else {
+			SubscriptionDetails = "Subscription not active";
+		}
 	}
 
 	const updatePasswordHandler = async () => {
