@@ -29,3 +29,4 @@ PyJWT
 pyjwt[crypto]
 
 black
+stripe

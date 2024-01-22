@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { userSignIn, userSignUp } from '$lib/apis/auths';
+	import { getSubscriptionStatus, stripeSignUp } from '$lib/apis/stripe';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import { config, user } from '$lib/stores';
 	import { onMount } from 'svelte';
@@ -13,32 +14,50 @@
 	let email = '';
 	let password = '';
 
-	const setSessionUser = async (sessionUser) => {
+	const setSessionUser = async (sessionUser, route) => {
 		if (sessionUser) {
-			console.log(sessionUser);
-			toast.success(`You're now logged in.`);
+			console.log("Session user is:", sessionUser);
 			localStorage.token = sessionUser.token;
+			
 			await user.set(sessionUser);
-			goto('/');
+			if (route == "payment") {
+				toast.success(`Account created!`);
+				goto('/stripe')
+			} else {
+				toast.success(`You're now logged in.`);
+				goto('/');	
+			}
+			
 		}
 	};
 
 	const signInHandler = async () => {
-		const sessionUser = await userSignIn(email, password).catch((error) => {
+		let sessionUser = await userSignIn(email, password).catch((error) => {
 			toast.error(error);
 			return null;
 		});
 
-		await setSessionUser(sessionUser);
+		sessionUser = await getSubscriptionStatus(sessionUser.email);
+		// Need to update user in case of subscription changes
+
+		await setSessionUser(sessionUser, "main");
 	};
 
 	const signUpHandler = async () => {
-		const sessionUser = await userSignUp(name, email, password).catch((error) => {
+		let sessionUser = await userSignUp(name, email, password).catch((error) => {
 			toast.error(error);
 			return null;
 		});
 
-		await setSessionUser(sessionUser);
+		const stripeUser = await stripeSignUp(sessionUser.id, sessionUser.email).catch((error) => {
+			console.log(error);
+			return null;
+		});
+		
+		sessionUser = await getSubscriptionStatus(sessionUser.email);
+		// Need to update user in case of subscription changes
+
+		await setSessionUser(sessionUser, "payment");
 	};
 
 	const submitHandler = async () => {

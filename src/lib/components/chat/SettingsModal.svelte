@@ -17,6 +17,7 @@
 		deleteModel
 	} from '$lib/apis/ollama';
 	import { updateUserPassword } from '$lib/apis/auths';
+	import { cancelStripeSubscription, getSubscription } from '$lib/apis/stripe';
 	import { createNewChat, deleteAllChats, getAllChats, getChatList } from '$lib/apis/chats';
 	import { WEB_UI_VERSION, WEBUI_API_BASE_URL } from '$lib/constants';
 
@@ -85,6 +86,9 @@
 	let modelTag = '';
 	let digest = '';
 	let pullProgress = null;
+	let showModal = false;
+	let isLoading = false;
+    let responseMessage = '';
 
 	let modelUploadMode = 'file';
 	let modelInputFile = '';
@@ -106,6 +110,7 @@
 
 	let gravatarEmail = '';
 	let titleAutoGenerateModel = '';
+	let SubscriptionDetails = 'Loading Subscription...';
 
 	// Chats
 	let saveChatHistory = true;
@@ -546,6 +551,41 @@
 		return models;
 	};
 
+	const cancelSubscription = async () => {
+		console.log("Cancelling subscription...");
+		isLoading = true;
+		responseMessage = '';
+		try {
+			const response = await cancelStripeSubscription(localStorage.token);
+			responseMessage = response;
+            isLoading = false;
+		} catch (error) {
+			responseMessage = "Error while cancelling subscription";
+			console.log("Cancellation error:", error);
+			isLoading = false;
+		}
+		
+	};
+
+	function toggleModal() {
+		showModal = !showModal;
+		isLoading = false;
+        responseMessage = '';
+	};
+
+	const loadSubscription = async () => {
+		const response = await getSubscription(localStorage.token);
+
+		const periodEnd = new Date(response.currentPeriodEnd * 1000); // Convert seconds to milliseconds
+		const formattedPeriodEnd = new Intl.DateTimeFormat('en-US', { 
+			year: 'numeric', 
+			month: 'short', 
+			day: 'numeric' 
+		}).format(periodEnd);
+
+		SubscriptionDetails = `${response.amount}/month Next: ${formattedPeriodEnd}`;
+	}
+
 	const updatePasswordHandler = async () => {
 		if (newPassword === newPasswordConfirm) {
 			const res = await updateUserPassword(localStorage.token, currentPassword, newPassword).catch(
@@ -577,6 +617,8 @@
 			API_BASE_URL = await getOllamaAPIUrl(localStorage.token);
 			OPENAI_API_BASE_URL = await getOpenAIUrl(localStorage.token);
 			OPENAI_API_KEY = await getOpenAIKey(localStorage.token);
+		} else {
+			loadSubscription();
 		}
 
 		let settings = JSON.parse(localStorage.getItem('settings') ?? '{}');
@@ -2010,12 +2052,54 @@
 						</div>
 					</form>
 				{:else if selectedTab === 'account'}
+					<!-- Subscription Info and Cancel Button -->
+					<div class="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-t-md border-b dark:border-gray-700">
+						<!-- Subscription Details -->
+						<div>
+							<!-- Display your information here -->
+							<span class="text-sm text-gray-700 dark:text-gray-300">{ SubscriptionDetails }</span>
+						</div>
+						
+						<!-- Cancel Button -->
+						<button
+							class="px-4 py-2 text-xs bg-red-100 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-200 text-white transition rounded-md font-medium flex items-center"
+							on:click={toggleModal}
+						>
+							<span>Cancel Subscription</span> <span class="ml-2">❌</span>
+						</button>
+					</div>
+
+					<!-- Confirmation Modal -->
+					{#if showModal}
+						<div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+							<div class="bg-white dark:bg-gray-800 p-6 rounded-md shadow-lg">
+								{#if isLoading}
+									<p>Loading...</p>
+								{:else}
+									{#if responseMessage !== ''}
+										<p>{responseMessage}</p>
+										<div class="flex justify-end mt-4">
+											<button class="bg-gray-300 text-black px-3 py-1 rounded" on:click={toggleModal}>Close</button>
+										</div>
+									{:else}
+										<p>Are you sure you want to cancel your subscription?</p>
+										<div class="flex justify-end space-x-2 mt-4">
+											<button class="bg-red-500 text-white px-3 py-1 rounded" on:click={cancelSubscription}>Confirm</button>
+											<button class="bg-gray-300 text-black px-3 py-1 rounded" on:click={toggleModal}>Cancel</button>
+										</div>
+									{/if}
+								{/if}
+							</div>
+						</div>
+					{/if}
+					
 					<form
 						class="flex flex-col h-full text-sm"
 						on:submit|preventDefault={() => {
 							updatePasswordHandler();
 						}}
 					>
+						<br>
 						<div class=" mb-2.5 font-medium">Change Password</div>
 
 						<div class=" space-y-1.5">

@@ -174,6 +174,8 @@
 														updateRoleHandler(user.id, 'admin');
 													} else if (user.role === 'pending') {
 														updateRoleHandler(user.id, 'user');
+													} else if (user.role === 'admin' ) {
+														updateRoleHandler(user.id, 'trial');													
 													} else {
 														updateRoleHandler(user.id, 'pending');
 													}

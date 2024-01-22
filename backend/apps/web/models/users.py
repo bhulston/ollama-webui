@@ -7,6 +7,7 @@ from utils.misc import get_gravatar_url
 
 from apps.web.internal.db import DB
 from apps.web.models.chats import Chats
+from apps.web.models.stripepay import Stripes
 
 ####################
 # User DB Schema
@@ -128,6 +129,7 @@ class UsersTable:
                 query = User.delete().where(User.id == id)
                 query.execute()  # Remove the rows, return number of rows removed.
 
+                Stripes.delete_stripe_by_id(id)
                 return True
             else:
                 return False

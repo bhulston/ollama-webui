@@ -71,8 +71,9 @@ async def proxy(path: str, request: Request, user=Depends(get_current_user)):
     target_url = f"{app.state.OPENAI_API_BASE_URL}/{path}"
     print(target_url, app.state.OPENAI_API_KEY)
 
-    if user.role not in ["user", "admin"]:
-        raise HTTPException(status_code=401, detail=ERROR_MESSAGES.ACCESS_PROHIBITED)
+    if user.role not in ["user", "admin", "trial"]:
+        raise HTTPException(status_code=401,
+                            detail=ERROR_MESSAGES.ACCESS_PROHIBITED)
     if app.state.OPENAI_API_KEY == "":
         raise HTTPException(status_code=401, detail=ERROR_MESSAGES.API_KEY_NOT_FOUND)
 

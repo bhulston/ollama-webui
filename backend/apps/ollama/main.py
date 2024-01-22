@@ -70,7 +70,7 @@ async def proxy(path: str, request: Request, user=Depends(get_current_user)):
     body = await request.body()
     headers = dict(request.headers)
 
-    if user.role in ["user", "admin"]:
+    if user.role in ["user", "admin", "trial"]:
         if path in ["pull", "delete", "push", "copy", "create"]:
             if user.role != "admin":
                 raise HTTPException(

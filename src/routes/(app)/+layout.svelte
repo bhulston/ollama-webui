@@ -78,9 +78,10 @@
 	};
 
 	onMount(async () => {
+		console.log("Current User is:", $user)
 		if ($user === undefined) {
 			await goto('/auth');
-		} else if (['user', 'admin'].includes($user.role)) {
+		} else if (['user', 'admin', 'trial'].includes($user.role)) {
 			try {
 				// Check if IndexedDB exists
 				DB = await openDB('Chats', 1);
@@ -205,7 +206,7 @@
 	<ShortcutsModal bind:show={showShortcuts} />
 
 	<div class="app relative">
-		{#if !['user', 'admin'].includes($user.role)}
+		{#if !['user', 'admin', 'trial'].includes($user.role)}
 			<div class="fixed w-full h-full flex z-50">
 				<div
 					class="absolute w-full h-full backdrop-blur-md bg-white/20 dark:bg-gray-900/50 flex justify-center"
@@ -213,23 +214,23 @@
 					<div class="m-auto pb-44 flex flex-col justify-center">
 						<div class="max-w-md">
 							<div class="text-center dark:text-white text-2xl font-medium z-50">
-								Account Activation Pending<br /> Contact Admin for WebUI Access
+								Subscription Not Active <br /> Pay with Stripe or Contact Admin for Access
 							</div>
 
 							<div class=" mt-4 text-center text-sm dark:text-gray-200 w-full">
 								Your account status is currently pending activation. To access the WebUI, please
-								reach out to the administrator. Admins can manage user statuses from the Admin
+								pay with stripe below or reach out to administrator.
 								Panel.
 							</div>
 
 							<div class=" mt-6 mx-auto relative group w-fit">
 								<button
-									class="relative z-20 flex px-5 py-2 rounded-full bg-white border border-gray-100 dark:border-none hover:bg-gray-100 transition font-medium text-sm"
+									class="relative z-20 flex px-5 py-2 rounded-full bg-purple-600 border border-gray-100 dark:border-none hover:bg-gray-100 transition font-medium text-sm"
 									on:click={async () => {
-										location.href = '/';
+										location.href = '/stripe';
 									}}
 								>
-									Check Again
+									Stripe Checkout
 								</button>
 
 								<button

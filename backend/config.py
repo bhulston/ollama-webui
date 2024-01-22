@@ -86,3 +86,11 @@ CHROMA_CLIENT = chromadb.PersistentClient(
 )
 CHUNK_SIZE = 1500
 CHUNK_OVERLAP = 100
+
+####################################
+# STRIPE
+####################################
+
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
+STRIPE_PROD_KEY = os.environ.get("STRIPE_PROD_KEY", "")
+APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5173")
