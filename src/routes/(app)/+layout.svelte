@@ -220,7 +220,6 @@
 							<div class=" mt-4 text-center text-sm dark:text-gray-200 w-full">
 								Your account status is currently pending activation. To access the WebUI, please
 								pay with stripe below or reach out to administrator.
-								Panel.
 							</div>
 
 							<div class=" mt-6 mx-auto relative group w-fit">
