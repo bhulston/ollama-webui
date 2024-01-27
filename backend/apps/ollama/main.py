@@ -6,7 +6,7 @@ from fastapi.concurrency import run_in_threadpool
 import requests
 import json
 import uuid
-import time
+from datetime import datetime
 from pydantic import BaseModel
 
 from apps.web.models.users import Users
@@ -69,15 +69,22 @@ async def cancel_ollama_request(request_id: str, user=Depends(get_current_user))
 async def proxy(path: str, request: Request, user=Depends(get_current_user)):
     target_url = f"{app.state.OLLAMA_API_BASE_URL}/{path}"
 
-    if path == "chat":
-        current_time = time.time()
-        user_id = str(user.id) 
-        last_call_time = app.state.rate_limit_data.get(user_id, 0)
+    if path in ["chat"]:
+        max_req = 150
+        user_id = str(user.id)
+        current_hour = datetime.now().hour
+        user_data = app.state.rate_limit_data.get(user_id, (0, current_hour))
 
-        if current_time - last_call_time < 1:
-            raise HTTPException(status_code=429, detail="Rate limit exceeded")
+        request_count, hour_window_start = user_data
+        if hour_window_start != current_hour:
+            # Reset the count and window start time if the hour has changed
+            request_count, hour_window_start = 0, current_hour
 
-        app.state.rate_limit_data[user_id] = current_time
+        if request_count >= max_req:
+            raise HTTPException(status_code=429, detail=f"Rate limit of {max_req} requests/hr exceeded")
+
+        # Increment the request count and update the data
+        app.state.rate_limit_data[user_id] = (request_count + 1, hour_window_start)
 
     body = await request.body()
     headers = dict(request.headers)
